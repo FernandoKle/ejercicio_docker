@@ -1,10 +1,12 @@
 #version: "3"
 services:
   clientemqtt:
-    image: clientemqtt
-    container_name: clientemqtt
+    image: ejer_mqtt
+    container_name: mqtt_service
     environment:
       - TZ=America/Argentina/Buenos_Aires 
-      - SERVIDOR=${SERVIDOR} #Se reemplazará por la env var SERVIDOR defineda en .env
-      - TOPICO=${TOPICO}
+      - SERVIDOR=${SERVIDOR}
+      - TOPICO_1=${TOPICO_1}
+      - TOPICO_2=${TOPICO_2}
+      - TOPICO_PUBLICA=${TOPICO_PUBLICA}
     restart: unless-stopped
