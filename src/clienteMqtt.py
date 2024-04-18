@@ -7,6 +7,20 @@ from contextvars import ContextVar
 
 logging.basicConfig(format='%(asctime)s: servicio_:mqtt (%(thread)s) - %(levelname)s -> %(message)s', level=logging.INFO, datefmt='%d/%m/%Y %H:%M:%S %z')
 
+class Datos():
+    contador = 0
+
+datos = Datos()
+
+async def incrementa():
+    while True:
+        datos.contador += 1
+        await asyncio.sleep(3)
+
+async def publica(client):
+    while True:
+        await client.publish(os.environ['TOPICO_PUBLICA'], payload=datos.contador)
+        await asyncio.sleep(5)
 
 async def main():
 
@@ -15,21 +29,25 @@ async def main():
     tls_context.check_hostname = True
     tls_context.load_default_certs()
 
-    client = aiomqtt.Client(
+    async with aiomqtt.Client(
         os.environ['SERVIDOR'],
         port=8883,
         tls_context=tls_context,
-        )
+        ) as client:
+        
+        await client.subscribe( os.environ['TOPICO_1'] )
+        await client.subscribe( os.environ['TOPICO_2'] )
 
-    #await client.conect()
-    await client.subscribe( os.environ['TOPICO_1'] )
+        #await incrementa()
+        await publica(client)
 
-    async for message in client.messages:
-        logging.info(str(message.topic) + ": " + message.payload.decode("utf-8"))
+        async for message in client.messages:
+            logging.info(str(message.topic) + ": " + message.payload.decode("utf-8"))
 
 if __name__ == "__main__":
     try:
         asyncio.run(main())
+
     except KeyboardInterrupt:
         logging.info("Terminando ejecucion")
         sys.exit(0)
