@@ -22,6 +22,11 @@ async def publica(client):
         await client.publish(os.environ['TOPICO_PUBLICA'], payload=datos.contador)
         await asyncio.sleep(5)
 
+async def escucha(client):
+    async for message in client.messages:
+        logging.info(str(message.topic) + ": " + message.payload.decode("utf-8"))
+
+
 async def main():
 
     tls_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
@@ -38,11 +43,12 @@ async def main():
         await client.subscribe( os.environ['TOPICO_1'] )
         await client.subscribe( os.environ['TOPICO_2'] )
 
-        #await incrementa()
-        await publica(client)
+        async with asyncio.TaskGroup() as tg:
+            task1 = tg.create_task( publica(client) )
+            task2 = tg.create_task( escucha(client) )
+            task3 = tg.create_task( incrementa()    )
 
-        async for message in client.messages:
-            logging.info(str(message.topic) + ": " + message.payload.decode("utf-8"))
+########################## END MAIN #########################################
 
 if __name__ == "__main__":
     try:
