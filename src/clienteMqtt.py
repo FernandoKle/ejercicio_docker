@@ -12,20 +12,52 @@ class Datos():
 
 datos = Datos()
 
+cola_1 = asyncio.Queue()
+cola_2 = asyncio.Queue()
+
+##################################################################################
+
 async def incrementa():
     while True:
+        logging.info("Incrementa contador")
         datos.contador += 1
         await asyncio.sleep(3)
 
+##################################################################################
+
 async def publica(client):
     while True:
+        logging.info("Publicando datos...")
         await client.publish(os.environ['TOPICO_PUBLICA'], payload=datos.contador)
         await asyncio.sleep(5)
 
-async def escucha(client):
-    async for message in client.messages:
-        logging.info(str(message.topic) + ": " + message.payload.decode("utf-8"))
+##################################################################################
 
+async def escucha_1(client):
+    while True:
+        message = await cola_1.get()
+        logging.info(os.environ['TOPICO_1'] + ": " + message.payload.decode("utf-8"))
+
+##################################################################################
+
+async def escucha_2(client):
+    while True:
+        message = await cola_2.get()
+        logging.info(os.environ['TOPICO_2'] + ": " + message.payload.decode("utf-8"))
+
+##################################################################################
+
+async def distribuye(client):
+
+    async for message in client.messages:
+
+        if message.topic.matches(os.environ['TOPICO_1']):
+            cola_1.put_nowait(message)
+
+        elif message.topic.matches(os.environ['TOPICO_2']):
+            cola_2.put_nowait(message)
+
+################################# MAIN ###########################################
 
 async def main():
 
@@ -42,11 +74,13 @@ async def main():
         
         await client.subscribe( os.environ['TOPICO_1'] )
         await client.subscribe( os.environ['TOPICO_2'] )
-
+        
         async with asyncio.TaskGroup() as tg:
-            task1 = tg.create_task( publica(client) )
-            task2 = tg.create_task( escucha(client) )
-            task3 = tg.create_task( incrementa()    )
+            task1 = tg.create_task( publica(client)    )
+            task2 = tg.create_task( distribuye(client) )
+            task3 = tg.create_task( escucha_1(client)  )
+            task4 = tg.create_task( escucha_2(client)  )
+            task5 = tg.create_task( incrementa()       )
 
 ########################## END MAIN #########################################
 
