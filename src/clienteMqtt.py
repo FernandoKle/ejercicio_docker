@@ -5,7 +5,8 @@ import asyncio, ssl, certifi, logging, os, sys
 import aiomqtt
 from contextvars import ContextVar
 
-logging.basicConfig(format='%(asctime)s: servicio_:mqtt (%(thread)s) - %(levelname)s -> %(message)s', level=logging.INFO, datefmt='%d/%m/%Y %H:%M:%S %z')
+logging.basicConfig(format='%(asctime)s - servicio_mqtt: %(taskName)s - %(levelname)s -> %(message)s', level=logging.INFO, datefmt='%d/%m/%Y %H:%M:%S %z')
+#: %(taskName)s
 
 class Datos():
     contador = 0
@@ -76,11 +77,11 @@ async def main():
         await client.subscribe( os.environ['TOPICO_2'] )
         
         async with asyncio.TaskGroup() as tg:
-            task1 = tg.create_task( publica(client)    )
-            task2 = tg.create_task( distribuye(client) )
-            task3 = tg.create_task( escucha_1(client)  )
-            task4 = tg.create_task( escucha_2(client)  )
-            task5 = tg.create_task( incrementa()       )
+            task1 = tg.create_task( publica(client), name="publica" )
+            task2 = tg.create_task( distribuye(client), name="distribuye" )
+            task3 = tg.create_task( escucha_1(client), name="escucha_1" )
+            task4 = tg.create_task( escucha_2(client), name="escucha_2" )
+            task5 = tg.create_task( incrementa(), name="incrementa" )
 
 ########################## END MAIN #########################################
 
@@ -89,5 +90,5 @@ if __name__ == "__main__":
         asyncio.run(main())
 
     except KeyboardInterrupt:
-        logging.info("Terminando ejecucion")
+        #logging.info("Terminando ejecucion")
         sys.exit(0)
