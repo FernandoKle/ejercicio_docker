@@ -6,7 +6,6 @@ import aiomqtt
 from contextvars import ContextVar
 
 logging.basicConfig(format='%(asctime)s - servicio_mqtt: %(taskName)s - %(levelname)s -> %(message)s', level=logging.INFO, datefmt='%d/%m/%Y %H:%M:%S %z')
-#: %(taskName)s
 
 class Datos():
     contador = 0
